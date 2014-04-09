@@ -1,41 +1,85 @@
 #!/usr/bin/env python
 
+# This program takes the given text input and computes the tf-idf rank
+
 import sys
+from collections import defaultdict
+import math
+import numpy
 
 def featurize(train_articles, test_articles):
-    '''
-    Returns a tuple (train_features, test_features) of matrices of
-    features. Each matrix is list of feature vectors, where a feature vector is
-    simply a list of numbers. Note that features must be converted here to the
-    proper numerical type (e.g., booleans should be converted to integers).
-        
-    You may find that returning a list of feature vectors is too
-    memory-intensive. You can reduce memory usage considerably by defining the
-    matrix as a Python generator that yields feature vectors, instead of
-    building the whole list of vectors. For example, if your matrix was defined
-    as [make_features(article) for article in articles], you could instead write
-    (make_features(article) for article in articles). See
-    https://wiki.python.org/moin/Generators for more details on
-    generators. (Note that this approach may increase running time.)
 
-    If you would like to examine an actual instance of the return type, try
-    running the following function call using the default implementation:
-       featurize(['train 1', 'training article 2'], ['test 1', 'the second test article'])
-    and inspecting the return value.
-    '''
-
-    ### REPLACE THE REST OF THIS FUNCTION WITH YOUR FEATURE GENERATION CODE ###
     def make_features(articles):
-        return [[len(article.split()), int(article.startswith('the'))] for article in articles]
+        STOPWORDS = ['a','able','about','across','after','all','almost','also',
+                    'am','among','an','and','any','are','as','at','be',
+                    'because','been','but','by','can','cannot','could','dear',
+                    'did','do','does','either','else','ever','every','for',
+                    'from','get','got','had','has','have','he','her','hers',
+                    'him','his','how','however','i','if','in','into','is','it',
+                    'its','just','least','let','like','likely','may','me',
+                    'might','most','must','my','neither','no','nor','not','of',
+                    'off','often','on','only','or','other','our','own','rather',
+                    'said','say','says','she','should','since','so','some',
+                    'than','that','the','their','them','then','there','these',
+                    'they','this','to','too','us','wants','was','we','were',
+                    'what','when','where','which','while','who','whom','why',
+                    'will','with','would','yet','you','your',"'s", "'ve"]
+
+        line_count = 0
+        unique = []
+
+        # Generate all the unique words in the entire document
+        for line in articles:
+            line_count += 1
+            for word in line.split(): 
+                if not word in unique and not word in STOPWORDS:
+                    unique.append(word);
+
+        articles.seek(0)
+
+        df = [0] * len(unique)
+        idf = [0] * len(unique)
+
+        # Generate the text and document frequency per article
+        all_tf = []
+        articles.seek(0)
+        for line in articles:
+            tf = [line.split().count(word) for word in unique]
+            i = 0
+            for feature in tf:
+                if (feature > 0):
+                    df[i] += 1
+                i += 1
+            all_tf.append(tf)
+
+        # Generate the inverse document frequency
+        i = 0
+        idf = [0] * len(unique)
+        for term in df:
+            idf[i] = math.log(line_count/term)
+            i += 1
+
+        # Manipulate idf to make it easier to multiply it with tf
+        idf_mat = numpy.zeros((len(idf), len(idf)))
+        numpy.fill_diagonal(idf_mat, idf)
+
+        # Generate the tfidf data
+        tfidf = []
+        for tf in all_tf:
+            tfidf.append(numpy.dot(tf, idf_mat))
+
+        articles.close()
+
+        return tfidf
+
     return (make_features(train_articles), make_features(test_articles))
 
-def articles_to_features(train_in_name, train_out_name, test_in_name, test_out_name):
-    with open(train_in_name, 'r') as in_file:
-        train_lines = in_file.readlines()
-    with open(test_in_name, 'r') as in_file:
-        test_lines = in_file.readlines()
+def articles_to_features(train_in_name, train_out_name, 
+                        test_in_name, test_out_name):
+    train_in_file = open(train_in_name, 'r')
+    test_in_file = open(test_in_name, 'r')
 
-    train_features, test_features = featurize(train_lines, test_lines)
+    train_features, test_features = featurize(train_in_file, test_in_file)
 
     for features, out_name in ((train_features, train_out_name),
                                (test_features, test_out_name)):
@@ -44,6 +88,8 @@ def articles_to_features(train_in_name, train_out_name, test_in_name, test_out_n
             for row in features:
                 csvfile.write(', '.join([str(feature) for feature in row]))
                 csvfile.write('\n')
+
+    csvfile.close()
 
 if __name__ == '__main__':
     articles_to_features(*sys.argv[1:5])
