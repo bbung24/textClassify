@@ -37,7 +37,6 @@ def featurize(train_articles, test_articles):
 
     def make_features(articles, unique):
         df = [0] * len(unique)
-        idf = [0] * len(unique)
         count = 0
 
         # Generate the text and document frequency per article
