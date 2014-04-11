@@ -37,7 +37,6 @@ def featurize(train_articles, test_articles):
 
     def make_features(articles, unique):
         df = [0] * len(unique)
-        df1 = [0] * len(unique)
         idf = [0] * len(unique)
         count = 0
 
@@ -48,16 +47,17 @@ def featurize(train_articles, test_articles):
             line_count += 1
             if line_count%100 == 0:
                 print "Line " + str(line_count)
-            i = 0
+
             tf_temp = defaultdict(int)
             for word in line.split():
                 tf_temp[word] += 1
 
-            for word in unique:                
+            i = 0
+            for i,word in enumerate(unique):
                 if(tf_temp[word] > 0):
                     df[i] += 1
-                i += 1
-            all_tf.append([tf_temp[word] for word in unique])            
+
+            all_tf.append([tf_temp[word] for word in unique])
 
         # Generate the inverse document frequency
         idf = [math.log(line_count/(1 + term)) for term in df]
@@ -68,7 +68,6 @@ def featurize(train_articles, test_articles):
         # Multiplies tf and idf to create tfidf
         tfidf = a*b
         articles.close()
-        print "Unique " + str(len(unique))
         return tfidf
 
     unique = build_unique(train_articles, unique)
