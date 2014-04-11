@@ -8,7 +8,8 @@ import numpy
 from collections import defaultdict
 def featurize(train_articles, test_articles):
 
-    def make_features(articles):
+    unique = set()
+    def build_unique(articles, unique):
         STOPWORDS = ['a','able','about','across','after','all','almost','also',
                     'am','among','an','and','any','are','as','at','be',
                     'because','been','but','by','can','cannot','could','dear',
@@ -23,28 +24,29 @@ def featurize(train_articles, test_articles):
                     'they','this','to','too','us','wants','was','we','were',
                     'what','when','where','which','while','who','whom','why',
                     'will','with','would','yet','you','your',"'s", "'ve"]
-
-        line_count = 0
-        unique = set()
+   
 
         # Generate all the unique words in the entire document
         for line in articles:
-            line_count += 1
             unique.update([word for word in line.split() 
-                        if not word in STOPWORDS])
+                            if not word in STOPWORDS])
 
         articles.seek(0)
 
+        return unique
+
+    def make_features(articles, unique):
         df = [0] * len(unique)
         idf = [0] * len(unique)
+        count = 0
 
         # Generate the text and document frequency per article
         all_tf = []
-        lines = 0
+        line_count = 0
         for line in articles:           
-            lines += 1
-            if lines%100 == 0:
-                print "Line " + str(lines)
+            line_count += 1
+            if line_count%100 == 0:
+                print "Line " + str(line_count)
             i = 0
             tf_temp = defaultdict(int)
             for word in line.split():
@@ -54,25 +56,27 @@ def featurize(train_articles, test_articles):
                 if(tf_temp[word] > 0):
                     df[i] += 1
                 i += 1
-            all_tf.append([tf_temp[word] for word in unique])
-            
+            all_tf.append([tf_temp[word] for word in unique])            
 
         # Generate the inverse document frequency
         i = 0
         idf = [0] * len(unique)
         for term in df:
-            idf[i] = math.log(line_count/term)
+            idf[i] = math.log(line_count/(1 + term))
             i += 1
 
         a = numpy.array(all_tf)
         b = numpy.array(idf)
 
-        # # Multiplies tf and idf to create tfidf
+        # Multiplies tf and idf to create tfidf
         tfidf = a*b
         articles.close()
+        print "Unique " + str(len(unique))
         return tfidf
 
-    return (make_features(train_articles), make_features(test_articles))
+    unique = build_unique(train_articles, unique)
+    unique = build_unique(test_articles, unique)
+    return (make_features(train_articles, unique), make_features(test_articles, unique))
 
 def articles_to_features(train_in_name, train_out_name, 
                         test_in_name, test_out_name):
