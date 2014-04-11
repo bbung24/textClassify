@@ -42,8 +42,7 @@ def featurize(train_articles, test_articles):
         # Generate the text and document frequency per article
         all_tf = []
         line_count = 0
-        for line in articles:           
-            line_count += 1
+        for line_count,line in enumerate(articles):           
             if line_count%100 == 0:
                 print "Line " + str(line_count)
 
@@ -57,6 +56,8 @@ def featurize(train_articles, test_articles):
                     df[i] += 1
 
             all_tf.append([tf_temp[word] for word in unique])
+        
+        line_count += 1
 
         # Generate the inverse document frequency
         idf = [math.log(line_count/(1 + term)) for term in df]
