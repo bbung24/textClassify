@@ -3,10 +3,9 @@
 # This program takes the given text input and computes the tf-idf rank
 
 import sys
-from collections import defaultdict
 import math
 import numpy
-
+from collections import defaultdict
 def featurize(train_articles, test_articles):
 
     def make_features(articles):
@@ -26,14 +25,13 @@ def featurize(train_articles, test_articles):
                     'will','with','would','yet','you','your',"'s", "'ve"]
 
         line_count = 0
-        unique = []
+        unique = set()
 
         # Generate all the unique words in the entire document
         for line in articles:
             line_count += 1
-            for word in line.split(): 
-                if not word in unique and not word in STOPWORDS:
-                    unique.append(word);
+            unique.update([word for word in line.split() 
+                        if not word in STOPWORDS])
 
         articles.seek(0)
 
@@ -42,15 +40,22 @@ def featurize(train_articles, test_articles):
 
         # Generate the text and document frequency per article
         all_tf = []
-        articles.seek(0)
-        for line in articles:
-            tf = [line.split().count(word) for word in unique]
+        lines = 0
+        for line in articles:           
+            lines += 1
+            if lines%100 == 0:
+                print "Line " + str(lines)
             i = 0
-            for feature in tf:
-                if (feature > 0):
+            tf_temp = defaultdict(int)
+            for word in line.split():
+                tf_temp[word] += 1
+
+            for word in unique:                
+                if(tf_temp[word] > 0):
                     df[i] += 1
                 i += 1
-            all_tf.append(tf)
+            all_tf.append([tf_temp[word] for word in unique])
+            
 
         # Generate the inverse document frequency
         i = 0
@@ -59,17 +64,12 @@ def featurize(train_articles, test_articles):
             idf[i] = math.log(line_count/term)
             i += 1
 
-        # Manipulate idf to make it easier to multiply it with tf
-        idf_mat = numpy.zeros((len(idf), len(idf)))
-        numpy.fill_diagonal(idf_mat, idf)
+        a = numpy.array(all_tf)
+        b = numpy.array(idf)
 
-        # Generate the tfidf data
-        tfidf = []
-        for tf in all_tf:
-            tfidf.append(numpy.dot(tf, idf_mat))
-
+        # # Multiplies tf and idf to create tfidf
+        tfidf = a*b
         articles.close()
-
         return tfidf
 
     return (make_features(train_articles), make_features(test_articles))
