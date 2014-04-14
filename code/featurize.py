@@ -9,7 +9,9 @@ from collections import defaultdict
 def featurize(train_articles, test_articles):
 
     unique = set()
+    
     def build_unique(articles, unique):
+        d = defaultdict(int)
         STOPWORDS = ['a','able','about','across','after','all','almost','also',
                     'am','among','an','and','any','are','as','at','be',
                     'because','been','but','by','can','cannot','could','dear',
@@ -24,12 +26,19 @@ def featurize(train_articles, test_articles):
                     'they','this','to','too','us','wants','was','we','were',
                     'what','when','where','which','while','who','whom','why',
                     'will','with','would','yet','you','your',"'s", "'ve"]
-   
-
+        
+            
         # Generate all the unique words in the entire document
         for line in articles:
+            for word in line.split():
+                d[word] += 1
+
+        articles.seek(0)
+
+        # Build up a vocabulary
+        for line in articles:
             unique.update([word for word in line.split() 
-                            if not word in STOPWORDS])
+                            if not word in STOPWORDS and d[word] > 3])
 
         articles.seek(0)
 
@@ -61,7 +70,7 @@ def featurize(train_articles, test_articles):
 
         # Generate the inverse document frequency
         idf = [math.log(line_count/(1 + term)) for term in df]
-
+        
         a = numpy.array(all_tf)
         b = numpy.array(idf)
 
@@ -69,7 +78,7 @@ def featurize(train_articles, test_articles):
         tfidf = a*b
         articles.close()
         return tfidf
-
+    
     unique = build_unique(train_articles, unique)
     unique = build_unique(test_articles, unique)
     return (make_features(train_articles, unique), make_features(test_articles, unique))
