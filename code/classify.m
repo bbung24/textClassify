@@ -7,6 +7,9 @@ function [c] = classify(XTrain_fName, yTrain_fName, XTest_fName)
 XTrain = csvread(XTrain_fName);
 XTest = csvread(XTest_fName);
 yTrain = csvread(yTrain_fName);
+%XTrain = XTrain_fName;
+%XTest = XTest_fName;
+%yTrain = yTrain_fName;
 
 % ------ REPLACE WITH YOUR CODE ------
 [row col] = size(XTrain);
@@ -26,10 +29,10 @@ for i=1:row
     three = (log(normpdf(XTest(i,:),mu(3,:),sigma(3,:))));
     four = (log(normpdf(XTest(i,:),mu(4,:),sigma(4,:))));
     
-    z(i,1) = sum(one);
-    z(i,2) = sum(two);
-    z(i,3) = sum(three);
-    z(i,4) = sum(four);
+    z(i,1) = nansum(one);
+    z(i,2) = nansum(two);
+    z(i,3) = nansum(three);
+    z(i,4) = nansum(four);
 end
 
 % Find the max probability of the 4 possible classes

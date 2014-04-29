@@ -38,9 +38,11 @@ def featurize(train_articles, test_articles):
         # Build up a vocabulary
         for line in articles:
             unique.update([word for word in line.split() 
-                            if not word in STOPWORDS and d[word] > 3])
+                            if not word in STOPWORDS and d[word] > 3 and not word.isdigit()])
 
         articles.seek(0)
+
+        #print unique
 
         return unique
 
@@ -68,6 +70,8 @@ def featurize(train_articles, test_articles):
         
         line_count += 1
 
+        #print numpy.array(all_tf)
+
         # Generate the inverse document frequency
         idf = [math.log(line_count/(1 + term)) for term in df]
         
@@ -78,9 +82,11 @@ def featurize(train_articles, test_articles):
         tfidf = a*b
         articles.close()
         return tfidf
+        #print all_tf
+        #return all_tf
     
     unique = build_unique(train_articles, unique)
-    unique = build_unique(test_articles, unique)
+    #unique = build_unique(test_articles, unique)
     return (make_features(train_articles, unique), make_features(test_articles, unique))
 
 def articles_to_features(train_in_name, train_out_name, 
